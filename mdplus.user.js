@@ -7,20 +7,26 @@
 // @author      MD+ by oatmealine, made into a userscript by mintexists
 // @description 11/22/2022, 2:13:56 PM
 // @require     https://raw.githubusercontent.com/enbyautumn/mdplus-cohost/master/out.js
+// @downloadURL https://github.com/enbyautumn/mdplus-cohost/raw/master/mdplus.user.js
+// @updateURL   https://github.com/enbyautumn/mdplus-cohost/raw/master/mdplus.user.js
 // ==/UserScript==
 
+// saves text state before transforming
 window.prev = ''
 
 window.transform = (...args) => {
-  console.log(args)
+  // More functions could be addedf
+  // console.log(args)
   if (args[1].tags.includes('md+')) {
     args[1].tags = args[1].tags.filter(tag => tag != 'md+')
     let combinedToString = args[0].markdownBlocks.map(e => e.markdown.content).join('\n\n')
     window.prev = combinedToString;
 
-    // let transformed = combinedToString.split('').map((s, i) => i % 2 == 0 ? s.toUpperCase() : s.toLowerCase()).join('')
+    // let transformed = combinedToString.split('').map((s, i) => i % 2 == 0 ? s.toUpperCase() : s.toLowerCase()).join('') // makes text sArCaStIc, was just a test function
+    
+    // this is from the import we did in the header
     let transformed = parse(combinedToString)
-    debugger;
+    // debugger;
 
     let unCombined = transformed.split('\n\n').map(e => {return {
       type: "markdown",
@@ -55,36 +61,32 @@ window.transform = (...args) => {
 
 window._newFunctionCode = (...args) => {
   if (args[0][0] == 6744) {
-    // 1624, 21624
-    // console.log('meowmeow')
+    // 1624, 21624 - numbers that get us the part of the webpack we want - these will likely change as updates occur
+
     let oldFn = args[0][1][99422]
-    // console.log(oldFn, oldFn.toString())
-    // let re = /(?<=validatePost:([a-zA-Z])=>{)const [a-zA-Z]=/gm
-    let re = /(?<=tags:\(([a-zA-Z]),([a-zA-Z])\)=>).+?(?=,)/gm
+
+    // Patch the tag adding event. This gets us the tags listed and also the current post state
+    let re = /(([a-zA-Z])\.tags=([a-zA-Z])\.tags)/gm    
     let match = re.exec(oldFn.toString())
-    let substring = match[0]
-    let replaced = oldFn.toString().replace(re, `{window.transform(${match[1]}, ${match[2]}); return ${match[0]};}`)
-    // replaced = oldFn.toString();
+    let replaced = oldFn.toString().replace(re, `{window.transform(${match[2]}, ${match[3]}); return ${match[1]};}`)
+
+    // add this to the webpack
     args[0][1][99422] = new Function('...args', `(${replaced})(...args)`)
-    // window.newFn =
-    // args[0][1][21624] =
-    // console.log(replaced, oldFn.toString())
   }
 }
 
+// this lets us modify the webpack things
 let newFunctionCode = `
   // console.log(...args);
   window._newFunctionCode(...args)
   return window.oldFn(...args);
 `
 
+// This section patches the webpack chunk loading so we can modify chunks
+// It was a mess to figure out, and if theres a better way please let me know <3
 let doneAlready = false;
-
 window.old__LOADABLE_LOADED_CHUNKS__ = window.__LOADABLE_LOADED_CHUNKS__ || []
 window.__LOADABLE_LOADED_CHUNKS__ = new Proxy(window.old__LOADABLE_LOADED_CHUNKS__, {
-  // push(target, prop, receiver) {
-  //   console.log(target, prop, receiver)
-  // },
   get(target, prop) {
     if (prop in target) {
       return target[prop];
@@ -94,26 +96,13 @@ window.__LOADABLE_LOADED_CHUNKS__ = new Proxy(window.old__LOADABLE_LOADED_CHUNKS
   },
 
   set: (target, prop, val) => {
-    // console.log(prop, "mutated to", val.toString(), val)
     target[prop] = val
     if (prop == 'push' && !doneAlready) {
       doneAlready = true;
-      // console.log("MEOW")
-      // debugger
       window.oldFn = val;
       let newFn = new Function('...args', newFunctionCode)
-      // let newFn = new Function('...args', `return window.oldFn(...args);`)
       target[prop] = newFn
     }
-    // debugger;
-    // if (val[0] == 6744) {
-    //   let fn = val[1][99422]
-    //   let newFn = new Function('e', 't', 'n', `console.log('meow');return (${fn.toString()})(e, t, n)`)
-    //   newFn = console.log;
-    //   val[1][99422] = newFn;
-    //   target[prop] = val
-    //   console.log(newFn)
-    // }
     return true
   }
 })

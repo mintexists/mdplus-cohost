@@ -8,7 +8,7 @@ Using ViolentMonkey or another userscript manager, install the script linked [he
 
 ## Usage
 
-- add the tag `md+` to a post to have it formatted with the Markdown Plus formatting (check the [Markdown Plus Site](https://oat.zone/markdown-plus/###) for more info
+- add the tag `md+` to a post (after it is written) to have it formatted with the Markdown Plus formatting (check the [Markdown Plus Site](https://oat.zone/markdown-plus/###) for more info
 - add the tag `md-` to undo the formatting change
 
 
