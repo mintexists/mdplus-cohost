@@ -1,9 +1,11 @@
 {
   "dependencies": {
     "color": "^4.2.3",
+    "download": "^8.0.0",
     "esbuild": "^0.15.15",
     "markdown-it": "^13.0.1",
     "markdown-it-plain-text": "^0.3.0",
-    "punycode": "^2.1.1"
+    "punycode": "^2.1.1",
+    "shuji": "^0.7.0"
   }
 }

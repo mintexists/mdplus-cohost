@@ -472,7 +472,4 @@ function parse(text, addPlaintext = true, inline = false) {
     return `<span role="text">${processedText}</span>`;
   }
 }
-
 window.parse = parse;
-
-// build with `./node_modules/.bin/esbuild converter.js --bundle --outfile=out.js --format=esm`
