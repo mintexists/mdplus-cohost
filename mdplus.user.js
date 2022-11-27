@@ -6,7 +6,7 @@
 // @version     1.0
 // @author      MD+ by oatmealine, made into a userscript by mintexists
 // @description 11/22/2022, 2:13:56 PM
-// @require     https://gist.githubusercontent.com/enbyautumn/e451c13316f1ae654dd2d271b7cdb120/raw/c1c72d4af9ea6a9f3cbff3bfe89de74d964c9dbe/out.js
+// @require     https://raw.githubusercontent.com/enbyautumn/mdplus-cohost/master/out.js
 // ==/UserScript==
 
 window.prev = ''
