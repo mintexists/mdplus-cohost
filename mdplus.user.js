@@ -7,6 +7,8 @@
 // @author      MD+ by oatmealine, made into a userscript by mintexists
 // @description 11/22/2022, 2:13:56 PM
 // @require     https://raw.githubusercontent.com/enbyautumn/mdplus-cohost/master/out.js
+// @downloadURL https://github.com/enbyautumn/mdplus-cohost/raw/master/mdplus.user.js
+// @updateURL   https://github.com/enbyautumn/mdplus-cohost/raw/master/mdplus.user.js
 // ==/UserScript==
 
 // saves text state before transforming
