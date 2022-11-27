@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "color": "^4.2.3",
+    "esbuild": "^0.15.15",
+    "markdown-it": "^13.0.1",
+    "markdown-it-plain-text": "^0.3.0",
+    "punycode": "^2.1.1"
+  }
+}
