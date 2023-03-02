@@ -3,106 +3,132 @@
 // @namespace   Violentmonkey Scripts
 // @match       https://cohost.org/*
 // @grant       none
-// @version     1.0
+// @version     1.1
 // @author      MD+ by oatmealine, made into a userscript by mintexists
 // @description 11/22/2022, 2:13:56 PM
 // @require     https://raw.githubusercontent.com/enbyautumn/mdplus-cohost/master/out.js
 // @downloadURL https://github.com/enbyautumn/mdplus-cohost/raw/master/mdplus.user.js
 // @updateURL   https://github.com/enbyautumn/mdplus-cohost/raw/master/mdplus.user.js
+// @run-at      document-start
 // ==/UserScript==
 
-// saves text state before transforming
-window.prev = ''
-
-window.transform = (...args) => {
-  // More functions could be addedf
-  // console.log(args)
-  if (args[1].tags.includes('md+')) {
-    args[1].tags = args[1].tags.filter(tag => tag != 'md+')
-    let combinedToString = args[0].markdownBlocks.map(e => e.markdown.content).join('\n\n')
-    window.prev = combinedToString;
-
-    // let transformed = combinedToString.split('').map((s, i) => i % 2 == 0 ? s.toUpperCase() : s.toLowerCase()).join('') // makes text sArCaStIc, was just a test function
-    
-    // this is from the import we did in the header
-    let transformed = parse(combinedToString)
-    // debugger;
-
-    let unCombined = transformed.split('\n\n').map(e => {return {
-      type: "markdown",
-      markdown: {
-        content: e
-      }
-    }})
-
-    args[0].markdownBlocks = unCombined;
+const realDefineProperty = Object.defineProperty.bind(Object);
+Object.defineProperty = function (object, key, descriptor) {
+  return realDefineProperty(object, key, {
+    ...descriptor,
+    configurable:
+      typeof descriptor.configurable === "boolean"
+        ? descriptor.configurable
+        : key !== "prototype",
+  });
+};
+window.addEventListener("load", async (e) => {
+  let promises = [];
+  for (const script of document.querySelectorAll("script[data-chunk]")) {
+    promises.push(
+      new Promise((cb, ecb) => {
+        script.addEventListener("load", cb);
+        script.addEventListener("error", ecb);
+      })
+    );
   }
+  await Promise.all(promises);
+  if (!window.__LOADABLE_LOADED_CHUNKS__) return;
+  window.__LOADABLE_LOADED_CHUNKS__.push([
+    [1870097963],
+    {
+      1870097963: (module, exports, require) => {
+        const findLoadedModules = (check) =>
+          window.__LOADABLE_LOADED_CHUNKS__
+            .map((e) => Object.keys(e[1]))
+            .flat()
+            .map((e) => require(e))
+            .filter(check);
+        const React = (window.React = findLoadedModules(
+          (e) => e && e.createElement && e.useState
+        )[0]);
+        const patched = new WeakSet();
+        const refMap = new WeakMap();
+        const realCreateElement = React.createElement;
+        Object.defineProperty(React, "createElement", {
+          value(type, props, ...children) {
+            if (
+              typeof type === "object" &&
+              type["$$typeof"] &&
+              type["$$typeof"].toString() === "Symbol(react.provider)" &&
+              typeof props === "object" &&
+              typeof props.value === "object" &&
+              props.value.id === "editor"
+            ) {
+              const realChildren = children;
+              const ref = React.useRef();
+              let element;
+              React.useEffect(() => {
+                refMap.set(props.value, ref.current);
+              }, [ref]);
+              children = [
+                realCreateElement.call(
+                  React,
+                  "div",
+                  {
+                    ref,
+                    class: "mdplus",
+                  },
+                  ...realChildren
+                ),
+              ];
+              if (!patched.has(props.value)) {
+                let prev = "";
+                const realSend = props.value.send;
+                function newSend(...args) {
+                  if (
+                    args[0] &&
+                    args[0].type &&
+                    args[0].type === "TAGS_INPUT"
+                  ) {
+                    const tags = args[0].tags;
+                    const input = refMap
+                      .get(props.value)
+                      .querySelector(
+                        '[role="tabpanel"] .flex-col > div:nth-child(2) textarea'
+                      ).value;
+                    if (tags.includes("md+")) {
+                      args[0].tags = tags.filter((tag) => tag != "md+");
+                      prev = input;
 
-  if (args[1].tags.includes('md-')) {
-    args[1].tags = args[1].tags.filter(tag => tag != 'md-')
+                      // this is from the import we did in the header
+                      let transformed = parse(input);
+                      // debugger;
+                      realSend.call(this, {
+                        type: "BODY_INPUT",
+                        body: transformed,
+                      });
+                    } else if (tags.includes("md-")) {
+                      args[0].tags = tags.filter((tag) => tag != "md-");
 
-    if (window.prev != '') {
-      let unCombined = window.prev.split('\n\n').map(e => {return {
-        type: "markdown",
-        markdown: {
-          content: e
-        }
-      }})
+                      if (prev != "") {
+                        realSend.call(this, {
+                          type: "BODY_INPUT",
+                          body: prev,
+                        });
 
-      window.prev = ''
-
-      args[0].markdownBlocks = unCombined;
-    }
-  }
-
-  // console.log(args)
-  return args;
-}
-
-window._newFunctionCode = (...args) => {
-  if (args[0][0] == 6744) {
-    // 1624, 21624 - numbers that get us the part of the webpack we want - these will likely change as updates occur
-
-    let oldFn = args[0][1][99422]
-
-    // Patch the tag adding event. This gets us the tags listed and also the current post state
-    let re = /(([a-zA-Z])\.tags=([a-zA-Z])\.tags)/gm    
-    let match = re.exec(oldFn.toString())
-    let replaced = oldFn.toString().replace(re, `{window.transform(${match[2]}, ${match[3]}); return ${match[1]};}`)
-
-    // add this to the webpack
-    args[0][1][99422] = new Function('...args', `(${replaced})(...args)`)
-  }
-}
-
-// this lets us modify the webpack things
-let newFunctionCode = `
-  // console.log(...args);
-  window._newFunctionCode(...args)
-  return window.oldFn(...args);
-`
-
-// This section patches the webpack chunk loading so we can modify chunks
-// It was a mess to figure out, and if theres a better way please let me know <3
-let doneAlready = false;
-window.old__LOADABLE_LOADED_CHUNKS__ = window.__LOADABLE_LOADED_CHUNKS__ || []
-window.__LOADABLE_LOADED_CHUNKS__ = new Proxy(window.old__LOADABLE_LOADED_CHUNKS__, {
-  get(target, prop) {
-    if (prop in target) {
-      return target[prop];
-    } else {
-      return 0; // default value
-    }
-  },
-
-  set: (target, prop, val) => {
-    target[prop] = val
-    if (prop == 'push' && !doneAlready) {
-      doneAlready = true;
-      window.oldFn = val;
-      let newFn = new Function('...args', newFunctionCode)
-      target[prop] = newFn
-    }
-    return true
-  }
-})
+                        prev = "";
+                      }
+                    }
+                  }
+                  return realSend.call(this, ...args);
+                }
+                patched.add(props.value);
+                Object.defineProperty(props.value, "send", {
+                  value: newSend,
+                });
+              }
+            }
+            return realCreateElement.call(React, type, props, ...children);
+          },
+        });
+      },
+    },
+    (r) => r(1870097963),
+  ]);
+});
