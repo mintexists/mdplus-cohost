@@ -90,7 +90,7 @@ window.addEventListener("load", async (e) => {
                     const input = refMap
                       .get(props.value)
                       .querySelector(
-                        '[role="tabpanel"] .flex-col > div:nth-child(2) textarea'
+                        '[role="tabpanel"] .flex-col > div:not(:first-child) textarea'
                       ).value;
                     if (tags.includes("md+")) {
                       args[0].tags = tags.filter((tag) => tag != "md+");
