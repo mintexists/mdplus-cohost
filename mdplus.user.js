@@ -3,7 +3,7 @@
 // @namespace   Violentmonkey Scripts
 // @match       https://cohost.org/*
 // @grant       none
-// @version     1.2
+// @version     1.3
 // @author      MD+ by oatmealine, made into a userscript by mintexists
 // @description 11/22/2022, 2:13:56 PM
 // @require     https://raw.githubusercontent.com/enbyautumn/mdplus-cohost/master/out.js
@@ -71,17 +71,12 @@ window.addEventListener("load", async (e) => {
               props.value.id === "editor"
             ) {
               const realChildren = children;
-              const ref = React.useRef();
-              let element;
-              React.useEffect(() => {
-                refMap.set(props.value, ref.current);
-              }, [ref]);
               children = [
                 realCreateElement.call(
                   React,
                   "div",
                   {
-                    ref,
+                    ref: node => refMap.set(props.value, node),
                     class: "mdplus",
                   },
                   ...realChildren
