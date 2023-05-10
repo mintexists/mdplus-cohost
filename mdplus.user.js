@@ -3,7 +3,7 @@
 // @namespace   Violentmonkey Scripts
 // @match       https://cohost.org/*
 // @grant       none
-// @version     1.1
+// @version     1.2
 // @author      MD+ by oatmealine, made into a userscript by mintexists
 // @description 11/22/2022, 2:13:56 PM
 // @require     https://raw.githubusercontent.com/enbyautumn/mdplus-cohost/master/out.js
@@ -22,16 +22,26 @@ Object.defineProperty = function (object, key, descriptor) {
         : key !== "prototype",
   });
 };
-window.addEventListener("load", async (e) => {
-  let promises = [];
-  for (const script of document.querySelectorAll("script[data-chunk]")) {
-    promises.push(
-      new Promise((cb, ecb) => {
-        script.addEventListener("load", cb);
-        script.addEventListener("error", ecb);
-      })
-    );
+const promises = [];
+const observer = new MutationObserver((mutations) => {
+  for (const mutation of mutations) {
+    if (mutation.type === "childList") {
+      for (const node of mutation.addedNodes) {
+        if (node.nodeName === "SCRIPT" && node.dataset.chunk) {
+          promises.push(
+            new Promise((resolve, reject) => {
+              node.addEventListener("load", resolve);
+              node.addEventListener("error", reject);
+            })
+          );
+        }
+      }
+    }
   }
+});
+observer.observe(document, { childList: true, subtree: true });
+window.addEventListener("load", async (e) => {
+  observer.disconnect();
   await Promise.all(promises);
   if (!window.__LOADABLE_LOADED_CHUNKS__) return;
   window.__LOADABLE_LOADED_CHUNKS__.push([
@@ -90,7 +100,7 @@ window.addEventListener("load", async (e) => {
                     const input = refMap
                       .get(props.value)
                       .querySelector(
-                        '[role="tabpanel"] .flex-col > div:not(:first-child) textarea'
+                        '[role="tabpanel"] .flex-col > div:nth-child(2) textarea'
                       ).value;
                     if (tags.includes("md+")) {
                       args[0].tags = tags.filter((tag) => tag != "md+");
