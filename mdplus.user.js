@@ -92,11 +92,7 @@ window.addEventListener("load", async (e) => {
                     args[0].type === "TAGS_INPUT"
                   ) {
                     const tags = args[0].tags;
-                    const input = refMap
-                      .get(props.value)
-                      .querySelector(
-                        '[role="tabpanel"] .flex-col > div:nth-child(2) textarea'
-                      ).value;
+                    const input = this.state.context.markdownBlocks.map(x => x.markdown.content).join('\n\n');
                     if (tags.includes("md+")) {
                       args[0].tags = tags.filter((tag) => tag != "md+");
                       prev = input;
