@@ -3,7 +3,7 @@
 // @namespace   Violentmonkey Scripts
 // @match       https://cohost.org/*
 // @grant       none
-// @version     1.4
+// @version     1.5
 // @author      MD+ by oatmealine, made into a userscript by mintexists
 // @description 11/22/2022, 2:13:56 PM
 // @require     https://raw.githubusercontent.com/enbyautumn/mdplus-cohost/master/out.js
@@ -64,9 +64,11 @@ window.addEventListener("load", async (e) => {
           value(type, props, ...children) {
             if (
               typeof type === "object" &&
+              type &&
               type["$$typeof"] &&
               type["$$typeof"].toString() === "Symbol(react.provider)" &&
               typeof props === "object" &&
+              props &&
               typeof props.value === "object" &&
               props.value.id === "editor"
             ) {
